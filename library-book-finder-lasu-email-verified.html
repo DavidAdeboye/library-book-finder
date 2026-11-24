@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Library Book Finder</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&family=Source+Serif+4:wght@600;700&display=swap">
+<style>
+
+:root{
+  --bg:#f3f6f9;
+  --card:#ffffff;
+  --tx:#263747;
+  --mu:#6b7d8d;
+  --bd:#dce5ed;
+  --ac:#496b89;
+  --acx:#ffffff;
+  --ok:#28684b;
+  --okb:#e8f3ed;
+  --no:#a44747;
+  --nob:#f8eceb;
+  --wn:#896a2d;
+  --wnb:#f7f1e4;
+  --hd:#384959;
+  --hd2:#2f4050;
+  --brass:#88bdf2;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px)
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;background:var(--bg);color:var(--tx);
+  font:15px/1.55 "Public Sans",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+#hd{
+  min-height:72px;background:var(--hd);color:#fff;
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:16px max(24px,calc((100vw - 1120px)/2));
+  border:0;box-shadow:0 1px 0 rgba(20,35,48,.08)
+}
+#hd b{font:700 1.16rem/1.2 "Public Sans",Inter,system-ui,sans-serif;letter-spacing:-.035em}
+#hd b:before{
+  content:"";display:inline-block;width:9px;height:9px;border-radius:3px;
+  background:#88bdf2;margin:0 11px 1px 0;vertical-align:middle
+}
+#hd span{font-size:.82rem;color:#d7e2eb;font-weight:600}
+body[data-role="l"] #hd{background:var(--hd2)}
+.wrap{max-width:1120px;margin:0 auto;padding:34px 28px 64px}
+h1,h2,h3{font-family:"Public Sans",Inter,system-ui,sans-serif;margin:0;letter-spacing:-.035em}
+h1{font-size:clamp(1.8rem,3vw,2.35rem);line-height:1.16;font-weight:700;margin-bottom:8px;color:#263747}
+h2{font-size:1.18rem;font-weight:700;margin:30px 0 12px}
+h3{font-size:1rem;font-weight:700;line-height:1.4}
+.sub{color:var(--mu);margin:0 0 26px;font-size:.98rem}
+.meta{color:var(--mu);font-size:.84rem;display:flex;flex-wrap:wrap;gap:3px 12px;margin-top:5px}
+p.meta{display:block;margin:0 0 12px}
+.auth-wrap{max-width:470px;margin:0 auto}.auth-wrap .card{padding:24px}.auth-wrap h2{margin:0 0 18px}.auth-wrap label{display:block;font-size:.84rem;font-weight:600;margin:13px 0 6px}.auth-wrap input{margin:0}.auth-foot{text-align:center;margin:13px 0}.quiet-link{border:0;background:none;color:#71869a;font:inherit;font-size:.82rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px}.staff-card{margin-top:12px}.staff-card h3{margin-bottom:12px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--bd)}
+.role{font-weight:600;font-size:.84rem;color:#607587}
+.tabs{display:flex;gap:26px;margin:28px 0 22px;overflow-x:auto;border-bottom:1px solid var(--bd)}
+.tab{
+  font:inherit;font-size:.9rem;font-weight:600;background:none;border:0;
+  border-bottom:2px solid transparent;margin-bottom:-1px;padding:0 1px 13px;
+  color:#758697;cursor:pointer;white-space:nowrap
+}
+.tab:hover{color:var(--tx)}
+.tab.on{color:#314e68;border-bottom-color:#6a89a7}
+.chip{
+  font:inherit;font-size:.84rem;font-weight:600;border:1px solid var(--bd);
+  background:#fff;color:#5d7082;border-radius:7px;padding:8px 13px;cursor:pointer;
+  transition:background .15s,border-color .15s,color .15s
+}
+.chip:hover{border-color:#9fb5c8}
+.chip.on{background:#e8f1f9;color:#365a78;border-color:#b9d0e3}
+input,select,textarea{
+  font:inherit;font-size:.92rem;width:100%;padding:12px 14px;
+  border:1px solid #d7e1e9;border-radius:8px;background:#fff;color:var(--tx);
+  box-shadow:0 1px 2px rgba(25,45,60,.025);transition:border-color .15s,box-shadow .15s
+}
+input::placeholder,textarea::placeholder{color:#9aa8b4}
+input:hover,select:hover,textarea:hover{border-color:#b8c9d7}
+input:focus,select:focus,textarea:focus{border-color:#789bb9;box-shadow:0 0 0 3px rgba(136,189,242,.2);outline:0}
+textarea{min-height:100px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(106,137,167,.55);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 20px}
+.row>select{flex:1;min-width:180px;max-width:260px;margin-left:auto}
+.card{
+  background:var(--card);border:1px solid var(--bd);border-radius:12px;
+  padding:20px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(35,55,72,.035);
+  border-left:1px solid var(--bd)
+}
+.card.s-ok,.card.s-no,.card.s-wn{border-left:1px solid var(--bd)}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.card h3{font-size:1.02rem}
+.shelf{
+  flex:none;border:1px solid #d8e3ec;border-radius:6px;padding:4px 9px;
+  font-weight:700;font-size:.75rem;line-height:1.4;background:#f4f7fa;
+  color:#536c82;white-space:nowrap
+}
+.badge{
+  display:inline-flex;align-items:center;gap:7px;font-size:.78rem;font-weight:600;
+  margin:14px 14px 0 0;padding:5px 9px;border-radius:6px
+}
+.badge:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge.ok{background:var(--okb);color:var(--ok)}
+.badge.no{background:var(--nob);color:var(--no)}
+.badge.wn{background:var(--wnb);color:var(--wn)}
+.ok{background:var(--okb);color:var(--ok)}
+.no{background:var(--nob);color:var(--no)}
+.wn{background:var(--wnb);color:var(--wn)}
+.al{
+  padding:13px 16px;border-radius:9px;border:1px solid currentColor;
+  border-left-width:3px;margin:0 0 12px;font-size:.86rem
+}
+.al b{display:block;margin-bottom:2px}
+button.b{
+  font:inherit;font-weight:600;font-size:.84rem;border:1px solid #d6e0e8;
+  background:#fff;color:#435a6d;border-radius:7px;padding:9px 13px;
+  margin:12px 8px 0 0;cursor:pointer;transition:background .15s,border-color .15s,transform .15s
+}
+button.b:hover{background:#f4f8fb;border-color:#b9cbd9}
+button.p{background:#496b89;color:#fff;border-color:#496b89}
+button.p:hover{background:#3c5b77;border-color:#3c5b77}
+button.d{color:#a44747}
+button:disabled,input:disabled{opacity:.42;cursor:not-allowed}
+.inl{display:flex;gap:8px;margin-top:12px;align-items:center}
+.inl input{flex:1;min-width:120px}
+.empty{
+  text-align:center;color:var(--mu);padding:36px 16px;background:#f8fafc;
+  border:1px dashed #d5e0e8;border-radius:10px;font-size:.9rem
+}
+label{display:block;margin:16px 0 6px;font-weight:600;font-size:.83rem;color:#43586b}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin:20px 0 24px}
+.stat{
+  background:#fff;border:1px solid var(--bd);border-radius:10px;padding:15px 16px;
+  font-size:.78rem;color:var(--mu);box-shadow:0 2px 8px rgba(35,55,72,.025)
+}
+.stat b{display:block;font:700 1.65rem/1.25 "Public Sans",Inter,system-ui,sans-serif;color:#30495f;letter-spacing:-.04em;margin-bottom:3px}
+.cp{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
+  border-top:1px solid #edf1f4;padding-top:10px;margin-top:12px;font-size:.82rem
+}
+.cp button.b{margin:2px 4px 0 0;padding:6px 10px;font-size:.76rem}
+.cp .badge{margin:0}
+.two{display:grid;gap:18px}
+.two .card{border:1px solid var(--bd);border-radius:14px;padding:26px;min-height:260px}
+.two h2{margin:0 0 10px;font-size:1.25rem}
+.two .meta{line-height:1.7}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.pL{background:#384959;border-color:#384959;color:#fff}
+.pL .meta{color:#d2dce4}
+.pL label{color:#e9eff4}
+.pL input{background:#fff;color:#263747;border-color:rgba(255,255,255,.35)}
+.pL button.p{background:#88bdf2;color:#263747;border-color:#88bdf2}
+.pL button.p:hover{background:#a7d0f6;border-color:#a7d0f6}
+.pS{background:#fff}
+.pS:before{content:"STUDENT ACCESS";display:block;font-size:.68rem;font-weight:700;letter-spacing:.12em;color:#6a89a7;margin-bottom:12px}
+.pL:before{content:"LIBRARY STAFF";display:block;font-size:.68rem;font-weight:700;letter-spacing:.12em;color:#bdddfc;margin-bottom:12px}
+#q{padding:15px 16px;font-size:.95rem;border-radius:9px}
+#toast{
+  position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%);background:#263747;color:#fff;padding:12px 18px;
+  border-radius:8px;box-shadow:0 8px 24px rgba(20,35,48,.2);opacity:0;
+  transition:opacity .2s;pointer-events:none;max-width:90%;z-index:5;font-size:.86rem
+}
+#toast.on{opacity:1}
+.note{font-size:.8rem;color:var(--mu);margin-top:24px}
+@media(min-width:760px){
+  .two{grid-template-columns:1fr 1fr}
+}
+@media(max-width:640px){
+  #hd{min-height:62px;padding:13px 18px}
+  .wrap{padding:26px 17px 44px}
+  .two{grid-template-columns:1fr}
+  .two .card{min-height:0;padding:22px}
+  .g2{grid-template-columns:1fr}
+  .row>select{max-width:none;margin-left:0}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card{padding:17px}
+  .tabs{gap:20px}
+  .cp{align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+</style>
+</head>
+<body>
+<header id="hd"><b>Library Book Finder</b><span id="who"></span></header>
+<div class="wrap" id="app"></div>
+<div id="toast"></div>
+<script>
+var KEY="lbf4",FINE=100,LOSTFEE=5000,MAXB=3,LOAN=14,RENEW=7,MAT=/^\d{9}$/;
+// Supabase project configuration
+var SUPABASE_URL="https://dpjnktbvqmbwfwnfpdnl.supabase.co";
+var SUPABASE_PUBLISHABLE_KEY="sb_publishable_fHA4A2afwb4WmExJPtWbiw_eUKFlY3Y";
+var supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+var authUser=null,authProfile=null,authBusy=false;
+var db=null,mode="local",books=[],reqs=[],fines=[],logs=[];
+var role=null,me="",staff="",tab="",st="all",q="",cat="",editId=null,delId=null,dirty=false;
+function addDays(n){var d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function fmt(s){return new Date(s+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short"})}
+function days(s){var t=new Date();t.setHours(0,0,0,0);return Math.round((new Date(s+"T00:00:00")-t)/864e5)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function $(id){return document.getElementById(id)}
+function toast(m){var t=$("toast");t.textContent=m;t.className="on";setTimeout(function(){t.className=""},3000)}
+function naira(n){return"₦"+n.toLocaleString()}
+function uid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+function isA(c){return c.st==="available"}
+function nAvail(b){return b.copies.filter(isA).length}
+function nLoans(b){return b.copies.filter(function(c){return c.st==="borrowed"}).length}
+function getB(id){return books.filter(function(x){return x.id===id})[0]}
+function sortB(){books.sort(function(a,b){return a.title.localeCompare(b.title)})}
+function mkCopies(shelf,n,from){var o=[],i;for(i=0;i<n;i++)o.push({no:shelf+"-"+("0"+(from+i+1)).slice(-2),st:"available"});return o}
+function addCopies(b,n){b.copies=b.copies.concat(mkCopies(b.shelf,n,b.copies.length))}
+function clearLoan(c){delete c.m;delete c.due;delete c.ren}
+
+function seedB(){
+  var r=[["Java: How to Program","Paul Deitel and Harvey Deitel","Programming","CS-A1","11th ed.","9780136519089",3,[["240591078",2]]],
+  ["Data Structures and Algorithms in Java","Michael Goodrich and Roberto Tamassia","Programming","CS-A2","6th ed.","9781118771334",2,[["240591375",3],["240591412",9]]],
+  ["Clean Code","Robert C. Martin","Programming","CS-A3","1st ed.","9780132350884",2,[]],
+  ["Introduction to Algorithms","Thomas Cormen et al.","Algorithms","CS-B1","4th ed.","9780262046305",2,[["240591256",-4]]],
+  ["Discrete Mathematics and Its Applications","Kenneth Rosen","Mathematics","MA-C1","8th ed.","9781259676512",3,[]],
+  ["Database System Concepts","Abraham Silberschatz et al.","Databases","CS-D1","7th ed.","9780078022159",2,[]],
+  ["Computer Networking: A Top-Down Approach","James Kurose and Keith Ross","Networks","CS-E1","8th ed.","9780135928608",1,[["240591304",7]]],
+  ["Operating System Concepts","Abraham Silberschatz et al.","Systems","CS-F1","10th ed.","9781119800361",2,[]],
+  ["Software Engineering","Ian Sommerville","Software Engineering","CS-G1","10th ed.","9780133943030",2,[]],
+  ["Artificial Intelligence: A Modern Approach","Stuart Russell and Peter Norvig","AI","CS-H1","4th ed.","9780134610993",1,[["240591078",6]]],
+  ["Research Methodology: Methods and Techniques","C. R. Kothari","Research","RM-J1","4th ed.","9789386649225",3,[]],
+  ["Oxford Dictionary of Computing (reference)","Oxford University Press","Reference","REF-1","8th ed.","9780199688975",1,[]]];
+  return r.map(function(x,i){var b={id:"b"+i,title:x[0],author:x[1],cat:x[2],shelf:x[3],edition:x[4],isbn:x[5],ref:x[2]==="Reference",copies:mkCopies(x[3],x[6],0),res:[]};
+    x[7].forEach(function(l,k){var c=b.copies[k];c.st="borrowed";c.m=l[0];c.due=addDays(l[1]);c.ren=0});return b});
+}
+function lsave(){try{localStorage.setItem(KEY,JSON.stringify({books:books,reqs:reqs,fines:fines,logs:logs}))}catch(e){}}
+function fail(){toast("Could not save. Your account may not have permission to change shared data.")}
+var C={books:"bk2",reqs:"rq",fines:"fn",logs:"lg"};
+function put(kind,o){if(db)db.doc(C[kind]+"/"+o.id).set(o).catch(fail);else lsave()}
+function del(kind,o){var a={books:books,reqs:reqs,fines:fines,logs:logs}[kind];a.splice(a.indexOf(o),1);if(db)db.doc(C[kind]+"/"+o.id).delete().catch(fail);else lsave()}
+function logA(t){var o={id:uid("l"),t:new Date().toISOString(),by:staff||"Librarian",act:t};logs.push(o);put("logs",o)}
+function addFine(m,amt,note){var o={id:uid("f"),m:m,amt:amt,note:note,paid:false,t:new Date().toISOString()};fines.push(o);put("fines",o)}
+function unpaid(m){var s=0;fines.forEach(function(f){if(f.m===m&&!f.paid)s+=f.amt});return s}
+function loansOf(m){var o=[];books.forEach(function(b){b.copies.forEach(function(c){if(c.st==="borrowed"&&c.m===m)o.push([b,c])})});return o}
+function accrued(m){var s=0;loansOf(m).forEach(function(x){var d=days(x[1].due);if(d<0)s+=-d*FINE});return s}
+function blocked(m){var l=loansOf(m),i;for(i=0;i<l.length;i++)if(days(l[i][1].due)<0)return m+" has an overdue book";
+  if(unpaid(m)>0)return m+" has unpaid fines ("+naira(unpaid(m))+")";if(l.length>=MAXB)return m+" already has "+MAXB+" books";return""}
+
+function refresh(){var a=document.activeElement;if(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA")&&a.id!=="q"){dirty=true}else render()}
+document.addEventListener("focusout",function(){if(dirty){dirty=false;setTimeout(render,50)}});
+var pendingSignupEmail='';var authMode='login',staffVisible=false;
+function emailRedirectUrl(){return window.location.origin+window.location.pathname}
+function showConfirmation(email){
+  pendingSignupEmail=email;
+  var box=document.getElementById('student-auth-message');
+  if(box)box.innerHTML='<div class="card pS" style="margin-top:14px"><h3>Check your LASU inbox</h3><p class="meta">Supabase sent a confirmation link to <b>'+esc(email)+'</b>. Open it on this device or browser to activate your account. If you do not see it, check Spam.</p><button class="b p" data-act="student-resend" style="margin-top:10px">Resend confirmation email</button></div>';
+}
+async function resendConfirmation(){
+  var email=pendingSignupEmail||document.getElementById('student-email')?.value.trim().toLowerCase()||'';
+  if(!email){toast('Enter your official LASU email first');return}
+  authBusy=true;
+  try{
+    var r=await supabaseClient.auth.resend({type:'signup',email:email,options:{emailRedirectTo:emailRedirectUrl()}});
+    if(r.error)throw r.error;
+    pendingSignupEmail=email;
+    toast('Confirmation link resent. Check your LASU inbox.');
+  }catch(e){toast(e.message||'Could not resend confirmation email')}
+  finally{authBusy=false}
+}
+async function studentAuth(action){
+  if(authBusy)return;
+  var m=document.getElementById('mat')?.value.trim()||'',pw=document.getElementById('studentpass')?.value||'';
+  var email=document.getElementById('student-email')?.value.trim().toLowerCase()||'',name=document.getElementById('student-name')?.value.trim()||'';
+  if(!MAT.test(m)){toast('Enter your 9-digit matric number');return}
+  if(pw.length<8){toast('Use a password with at least 8 characters');return}
+  if(action==='signup'){
+    var emailParts=email.split('@'),local=emailParts[0]||'',domain=(emailParts[1]||'').toLowerCase();
+    if(emailParts.length!==2||domain!=='st.lasu.edu.ng'||local.length<=9||local.slice(-9)!==m){toast('Use your official LASU email. Its address must end with your 9-digit matric number before @st.lasu.edu.ng');return}
+    if(!name){toast('Enter your full name as it appears in the student record');return}
+  }
+  authBusy=true;
+  try{
+    if(action==='signup'){
+      var result=await supabaseClient.auth.signUp({email:email,password:pw,options:{data:{matric_number:m,full_name:name},emailRedirectTo:emailRedirectUrl()}});
+      if(result.error)throw result.error;
+      if(!result.data.user)throw new Error('Supabase did not create the account. Check Auth settings.');
+      if(result.data.session){
+        authUser=result.data.user;
+        var immediate=await supabaseClient.from('profiles').select('role,matric_number,full_name').eq('id',authUser.id).single();
+        if(immediate.error)throw immediate.error;
+        if(immediate.data.role!=='student'||immediate.data.matric_number!==m){await supabaseClient.auth.signOut();throw new Error('Email confirmation is required. Enable Confirm email in Supabase Auth.');}
+        authProfile=immediate.data;me=m;role='student';tab='find';await loadLibraryData();render();toast('Student account activated');
+      }else{showConfirmation(email);toast('Confirmation link sent. Check your LASU inbox.');}
+    }else{
+      var loginResponse=await fetch(SUPABASE_URL+'/functions/v1/student-login',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY},body:JSON.stringify({matric_number:m,password:pw})});
+      var loginData=await loginResponse.json();if(!loginResponse.ok)throw new Error(loginData.error||'Unable to sign in. Check your matric number and password.');
+      var sessionResult=await supabaseClient.auth.setSession({access_token:loginData.access_token,refresh_token:loginData.refresh_token});
+      if(sessionResult.error)throw sessionResult.error;
+      authUser=sessionResult.data.user;
+      var pr=await supabaseClient.from('profiles').select('role,matric_number,full_name').eq('id',authUser.id).single();
+      if(pr.error)throw pr.error;
+      if(pr.data.role!=='student'||pr.data.matric_number!==m){await supabaseClient.auth.signOut();throw new Error('This account is not an activated student account.');}
+      authProfile=pr.data;me=m;role='student';tab='find';await loadLibraryData();render();toast('Signed in');
+    }
+  }catch(e){toast(e.message||'Authentication failed')}
+  finally{authBusy=false}
+}
+async function staffAuth(){
+  if(authBusy)return;var email=$("staff-email")?.value.trim()||"",pw=$("staff-pass")?.value||"";
+  if(!email||!pw){toast("Enter your staff email and password");return}authBusy=true;
+  try{var r=await supabaseClient.auth.signInWithPassword({email:email,password:pw});if(r.error)throw r.error;
+    authUser=r.data.user;var pr=await supabaseClient.from("profiles").select("role,full_name").eq("id",authUser.id).single();
+    if(pr.error)throw pr.error;if(pr.data.role!=="librarian"){await supabaseClient.auth.signOut();throw new Error("This account does not have librarian access")}
+    authProfile=pr.data;staff=pr.data.full_name||email;role="lib";tab="books";await loadLibraryData();render();toast("Librarian signed in");
+  }catch(e){toast(e.message||"Authentication failed")}finally{authBusy=false}
+}
+async function restoreAuth(){
+  try{
+    var r=await supabaseClient.auth.getSession();
+    if(!r.data.session){
+      var params=new URLSearchParams(window.location.search);
+      var hash=window.location.hash||"";
+      if(params.has("error_description")||hash.indexOf("error_description")!==-1){
+        var msg=params.get("error_description")||new URLSearchParams(hash.slice(1)).get("error_description")||"Email confirmation failed.";
+        toast(decodeURIComponent(msg.replace(/\+/g," ")));
+      }
+      return;
+    }
+    authUser=r.data.session.user;
+    var pr=await supabaseClient.from("profiles").select("role,matric_number,full_name").eq("id",authUser.id).single();
+    if(pr.error){console.warn("Profile lookup failed after authentication",pr.error);return;}
+    authProfile=pr.data;
+    if(pr.data.role==="student"){me=pr.data.matric_number;role="student";tab="find"}
+    else if(pr.data.role==="librarian"){staff=pr.data.full_name||authUser.email;role="lib";tab="books"}
+    else{
+      await supabaseClient.auth.signOut();
+      toast("Email confirmed, but this account is not approved as a LASU student. Check your matric number and official email with the library administrator.");
+      return;
+    }
+    if(role)await loadLibraryData();
+    if(window.location.search||window.location.hash)history.replaceState({},document.title,window.location.pathname);
+    render();
+    if(role==="student")toast("LASU email confirmed. Student account activated.");
+  }catch(e){console.warn("Session restore failed",e)}
+}
+async function loadLibraryData(){
+  if(!authUser)return;
+  mode="supabase";
+  try{
+    var results=await Promise.all([
+      supabaseClient.from("books").select("*").eq("active",true).order("title"),
+      supabaseClient.from("book_copies").select("*"),
+      supabaseClient.from("loans").select("*, profiles(matric_number)").eq("status","active"),
+      supabaseClient.from("reservations").select("*, profiles(matric_number)").in("status",["waiting","ready"]).order("created_at"),
+      supabaseClient.from("fines").select("*, profiles(matric_number)").order("created_at",{ascending:false}),
+      supabaseClient.from("book_requests").select("*, profiles(matric_number)").eq("status","open").order("created_at",{ascending:false}),
+      supabaseClient.from("activity_logs").select("*").order("created_at",{ascending:false}).limit(150)
+    ]);
+    for(var i=0;i<results.length;i++)if(results[i].error)throw results[i].error;
+    var bRows=results[0].data||[],cRows=results[1].data||[],lRows=results[2].data||[],rRows=results[3].data||[],fRows=results[4].data||[],qRows=results[5].data||[],aRows=results[6].data||[];
+    var loanByCopy={};lRows.forEach(function(x){loanByCopy[x.copy_id]=x});
+    books=bRows.map(function(b){var copies=cRows.filter(function(c){return c.book_id===b.id}).map(function(c){var l=loanByCopy[c.id],o={id:c.id,no:c.copy_label,st:c.status};if(l){o.m=l.profiles?.matric_number||"";o.due=l.due_date;o.ren=l.renewal_count;o.loanId=l.id}return o});
+      var res=rRows.filter(function(r){return r.book_id===b.id}).map(function(r){return r.profiles?.matric_number||""});
+      return{id:b.id,title:b.title,author:b.author,cat:b.subject,shelf:b.shelf_code,edition:b.edition||"",isbn:b.isbn||"",ref:b.is_reference,copies:copies,res:res,db:true};
+    });
+    fines=fRows.map(function(f){return{id:f.id,m:f.profiles?.matric_number||"",amt:f.amount_ngn,note:f.description,paid:f.status!=="unpaid",created_at:f.created_at}});
+    reqs=qRows.map(function(r){return{id:r.id,t:r.title,a:r.author||"",m:r.profiles?.matric_number||"",created_at:r.created_at}});
+    logs=aRows.map(function(x){return{id:x.id,t:x.created_at,by:x.actor_label,act:(x.action||"").replaceAll("_"," ")+(x.target_student_matric?" · "+x.target_student_matric:"")+(x.details?.title?" · "+x.details.title:"")}});
+    sortB();render();
+  }catch(e){console.error("Supabase data load failed",e);toast("Could not load library data: "+(e.message||"check database policies"));}
+}
+async function refreshLibrary(){await loadLibraryData()}
+function init(){mode="supabase";render();}
+async function dbRpc(name,args){var r=await supabaseClient.rpc(name,args||{});if(r.error)throw r.error;await loadLibraryData();return r.data}
+async function dbAddTitle(n){
+  var existing=n.isbn?books.filter(function(b){return b.isbn===n.isbn})[0]:null,bookId=existing?.id;
+  if(existing){var rows=[];for(var i=0;i<n.n;i++)rows.push({book_id:bookId,copy_label:n.shelf+"-"+("0"+(existing.copies.length+i+1)).slice(-2)});
+    var ins=await supabaseClient.from("book_copies").insert(rows);if(ins.error)throw ins.error;
+  }else{
+    var insb=await supabaseClient.from("books").insert({title:n.title,author:n.author,subject:n.cat,edition:n.edition||null,isbn:n.isbn||null,shelf_code:n.shelf,is_reference:n.ref,created_by:authUser.id}).select("id").single();if(insb.error)throw insb.error;bookId=insb.data.id;
+    var copies=[];for(var j=0;j<n.n;j++)copies.push({book_id:bookId,copy_label:n.shelf+"-"+("0"+(j+1)).slice(-2)});
+    var ci=await supabaseClient.from("book_copies").insert(copies);if(ci.error)throw ci.error;
+  }
+  await loadLibraryData();toast("Book saved to the shared catalogue");
+}
+
+function render(){
+  var h="";document.body.dataset.role=role?(role==="student"?"s":"l"):"";$("who").textContent=role?(role==="student"?"Student":"Librarian desk"):"";
+  if(!role)h=landing();
+  else{h='<div class="top"><span class="role">'+(role==="student"?"Signed in as "+esc(me):"Librarian: "+esc(staff))+'</span><button class="b" style="margin:0" data-act="out">Switch user</button></div>';
+    h+=role==="student"?student():librarian()}
+  $("app").innerHTML=h;if(role==="student"&&tab==="find")fillList();
+}
+function status(){return mode==="shared"?"Shared data is on: students and the librarian can use different devices.":"Local mode: data is saved on this device only."}
+function landing(){
+  var h='<h1>Sign in to the library</h1><p class="sub">Enter your matric number and password to continue.</p><div class="auth-wrap"><div class="card pS"><h2>'+(authMode==='signup'?'Create student account':'Student sign in')+'</h2>'+
+  '<label for="mat">Matric number</label><input id="mat" placeholder="e.g. 240591375" inputmode="numeric" maxlength="9" autocomplete="username">';
+  if(authMode==='signup')h+='<label for="student-name">Full name</label><input id="student-name" placeholder="Full name as registered" autocomplete="name"><label for="student-email">Official LASU email</label><input id="student-email" type="email" placeholder="name@st.lasu.edu.ng" autocomplete="email">';
+  h+='<label for="studentpass">Password</label><input id="studentpass" type="password" placeholder="At least 8 characters" autocomplete="'+(authMode==='signup'?'new-password':'current-password')+'">';
+  if(authMode==='signup')h+='<button class="b p" data-act="student-signup" style="margin-top:12px">Create account</button><button class="b" data-act="student-resend">Resend confirmation link</button><button class="b" data-act="student-back">Back to sign in</button>';
+  else h+='<button class="b p" data-act="student-login" style="margin-top:12px">Sign in</button><button class="b" data-act="student-create">Create account</button>';
+  h+='<div id="student-auth-message"></div><p class="meta">New accounts must be verified using an official LASU student email. A confirmation link will be sent to your inbox.</p></div>';
+  h+='<div class="auth-foot"><button class="quiet-link" data-act="staff-toggle">'+(staffVisible?'Hide librarian sign in':'Librarian sign in')+'</button></div>';
+  if(staffVisible)h+='<div class="card staff-card"><h3>Librarian sign in</h3><label for="staff-email">Staff email</label><input id="staff-email" type="email" placeholder="Staff email" autocomplete="username"><label for="staff-pass">Password</label><input id="staff-pass" type="password" placeholder="Staff password" autocomplete="current-password"><button class="b p" data-act="staff-login" style="margin-top:12px">Sign in</button></div>';
+  return h+'</div><p class="note">Student borrowing permissions are granted by the database only after LASU email verification and matric-number approval.</p>';
+}
+function tabs(l){return'<div class="tabs">'+l.map(function(t){return'<button class="tab'+(tab===t[0]?" on":"")+'" data-tab="'+t[0]+'">'+t[1]+'</button>'}).join("")+'</div>'}
+function al(c,t,m){return'<div class="al '+c+'"><b>'+esc(t)+'</b>'+esc(m)+'</div>'}
+function det(b){return'<span>'+esc(b.author)+'</span><span>'+esc(b.cat)+'</span>'+(b.edition?'<span>'+esc(b.edition)+'</span>':"")+(b.isbn?'<span>ISBN '+esc(b.isbn)+'</span>':"")}
+function hd(b){return'<div class="hd"><div><h3>'+esc(b.title)+'</h3><div class="meta">'+det(b)+'</div></div><span class="shelf" title="Shelf code">'+esc(b.shelf)+'</span></div>'}
+
+/* STUDENT */
+function alerts(){
+  var h="",l=loansOf(me);
+  l.forEach(function(x){var d=days(x[1].due);
+    if(d<0)h+=al("no","Overdue: "+x[0].title,"Was due "+fmt(x[1].due)+". Fine so far: "+naira(-d*FINE)+" ("+naira(FINE)+" per day). Return it to stop the fine.");
+    else if(d<=3)h+=al("wn","Due soon: "+x[0].title,(d===0?"Due today":"Due in "+d+" day"+(d>1?"s":""))+" ("+fmt(x[1].due)+").")});
+  if(unpaid(me)>0)h+=al("no","Unpaid fines: "+naira(unpaid(me)),"Pay at the library desk. You cannot borrow until it is cleared.");
+  books.forEach(function(b){if(nAvail(b)>0&&b.res[0]===me)h+=al("ok","Ready for you: "+b.title,"Your reserved book is available. Collect it from shelf "+b.shelf+".")});
+  return h;
+}
+function student(){
+  var h='<h1>Find your book</h1><p class="sub">Check availability before you go to the library.</p>'+alerts()+tabs([["find","Find a book"],["req","Request a book"],["mine","My activity"]]);
+  if(tab==="find"){
+    var c=[];books.forEach(function(b){if(c.indexOf(b.cat)<0)c.push(b.cat)});c.sort();
+    h+='<input id="q" type="search" placeholder="Search by title, author or ISBN" value="'+esc(q)+'" autocomplete="off"><div class="row">'+
+    [["all","All"],["avail","Available"],["out","Borrowed"]].map(function(x){return'<button class="chip'+(st===x[0]?" on":"")+'" data-st="'+x[0]+'">'+x[1]+'</button>'}).join("")+
+    '<select id="cat"><option value="">All subjects</option>'+c.map(function(x){return'<option'+(x===cat?" selected":"")+'>'+esc(x)+'</option>'}).join("")+'</select></div><div id="list"></div>';
+  }else if(tab==="req"){
+    h+='<p class="meta">Cannot find the book you need? Tell the library and it will be considered.</p><label for="rt">Book title</label><input id="rt"><label for="ra">Author (optional)</label><input id="ra"><button class="b p" style="margin-top:14px" data-act="rsend">Send request</button>';
+  }else{
+    var l=loansOf(me),mr=books.filter(function(b){return b.res.indexOf(me)>-1}),mq=reqs.filter(function(r){return r.m===me}),mf=fines.filter(function(f){return f.m===me});
+    h+='<p class="meta">You can borrow up to '+MAXB+' books for '+LOAN+' days. One renewal of '+RENEW+' days is allowed if nobody has reserved the book. Late fine: '+naira(FINE)+' per day.</p>';
+    h+='<h2>Books I have borrowed</h2>'+(l.length?l.map(function(x){var d=days(x[1].due),b=x[0],ok=d>=0&&!x[1].ren&&!b.res.length;
+      return'<div class="card"><h3>'+esc(b.title)+'</h3><div class="meta">Copy '+esc(x[1].no)+'</div><span class="badge '+(d<0?"no":d<=3?"wn":"ok")+'">'+(d<0?"Overdue since ":"Due back ")+fmt(x[1].due)+'</span><div><button class="b" data-act="renew" data-id="'+b.id+'" data-no="'+esc(x[1].no)+'"'+(ok?"":" disabled")+'>Renew</button>'+(ok?"":'<span class="meta">'+(d<0?"Overdue books cannot be renewed.":x[1].ren?"Already renewed once.":"Another student has reserved it.")+'</span>')+'</div></div>'}).join(""):'<div class="empty">None right now.</div>');
+    h+='<h2>My reservations</h2>'+(mr.length?mr.map(function(b){return'<div class="card"><h3>'+esc(b.title)+'</h3><div class="meta">'+(nAvail(b)>0&&b.res[0]===me?"Available now: collect it":"Place in queue: "+(b.res.indexOf(me)+1))+'</div><button class="b" data-act="unres" data-id="'+b.id+'">Cancel reservation</button></div>'}).join(""):'<div class="empty">No reservations.</div>');
+    h+='<h2>My fines</h2>'+(mf.length||accrued(me)?mf.map(function(f){return'<div class="card"><h3>'+naira(f.amt)+'</h3><div class="meta">'+esc(f.note)+'</div><span class="badge '+(f.paid?"ok":"no")+'">'+(f.paid?"Paid":"Unpaid")+'</span></div>'}).join("")+(accrued(me)?'<div class="meta">Plus '+naira(accrued(me))+' building up on overdue books.</div>':""):'<div class="empty">No fines.</div>');
+    h+='<h2>My requests</h2>'+(mq.length?mq.map(function(r){return'<div class="card"><h3>'+esc(r.t)+'</h3><div class="meta">'+(r.a?esc(r.a)+" · ":"")+'waiting for the librarian</div></div>'}).join(""):'<div class="empty">No requests.</div>');
+  }
+  return h;
+}
+function fillList(){
+  var l=$("list");if(!l)return;var s=q.trim().toLowerCase();
+  if(!books.length){l.innerHTML='<div class="empty">The catalogue is empty. Ask the librarian to add books.</div>';return}
+  var out=books.filter(function(b){
+    if(s&&(b.title+" "+b.author+" "+(b.isbn||"")).toLowerCase().indexOf(s)<0)return false;
+    if(cat&&b.cat!==cat)return false;if(st==="avail"&&nAvail(b)<1)return false;if(st==="out"&&nAvail(b)>0)return false;return true});
+  if(!out.length){l.innerHTML='<div class="empty">No book found. Try another word, or use <b>Request a book</b>.</div>';return}
+  l.innerHTML=out.map(function(b){
+    var a=nAvail(b),h='<div class="card '+(b.ref?"s-wn":a>0?"s-ok":"s-no")+'">'+hd(b);
+    if(b.ref)return h+'<span class="badge wn">Reference only · use inside the library</span>'+(a>0?'<span class="badge ok">On shelf</span>':'<span class="badge no">Not on shelf</span>')+'</div>';
+    if(a>0)h+='<span class="badge ok">Available · '+a+' of '+b.copies.length+' on shelf</span>';
+    else{var e=b.copies.filter(function(c){return c.st==="borrowed"}).map(function(c){return c.due}).sort()[0];
+      h+='<span class="badge no">'+(e?"All copies borrowed · back by "+fmt(e):"No copy available")+'</span>';
+      if(b.res.indexOf(me)>-1)h+='<span class="badge wn">You reserved this</span>';else h+='<div><button class="b" data-act="res" data-id="'+b.id+'">Reserve this book</button></div>'}
+    return h+'</div>'}).join("");
+}
+
+/* LIBRARIAN */
+function fld(id,label,val,x){return'<div><label for="'+id+'">'+label+'</label><input id="'+id+'" value="'+esc(val)+'" '+(x||"")+'></div>'}
+function bookForm(p,b,act,txt,edit){
+  b=b||{};
+  return'<div class="g2">'+fld(p+"t","Title",b.title)+fld(p+"a","Author",b.author)+fld(p+"e","Edition (e.g. 3rd ed.)",b.edition)+fld(p+"i","ISBN",b.isbn)+fld(p+"c","Subject",b.cat)+fld(p+"s","Shelf code",b.shelf)+
+  fld(p+"n",edit?"Add more copies (optional)":"Number of copies",edit?0:1,'type="number" min="'+(edit?0:1)+'"')+'<div><label for="'+p+'r">Loan type</label><select id="'+p+'r"><option value="0">Can be borrowed</option><option value="1"'+(b.ref?" selected":"")+'>Reference only</option></select></div></div>'+
+  '<button class="b p" data-act="'+act+'"'+(b.id?' data-id="'+b.id+'"':"")+'>'+txt+'</button>';
+}
+function readForm(p){return{title:$(p+"t").value.trim(),author:$(p+"a").value.trim()||"Unknown",edition:$(p+"e").value.trim(),isbn:$(p+"i").value.trim(),cat:$(p+"c").value.trim()||"General",shelf:$(p+"s").value.trim(),n:parseInt($(p+"n").value,10)||0,ref:$(p+"r").value==="1"}}
+var BTN={borrowed:[["ret","Return"],["retd","Return damaged"],["lost","Lost"]],available:[["dmg","Damaged"],["lost","Lost"],["wd","Withdraw"]],damaged:[["rest","Repaired"],["wd","Withdraw"],["lost","Lost"]],lost:[["rest","Found"]],withdrawn:[["rest","Restore"]]};
+function librarian(){
+  var h='<h1>Librarian desk</h1><p class="sub">Every action here is written to the history log.</p>'+tabs([["books","Books"],["fines","Fines"],["reqs","Requests ("+reqs.length+")"],["add","Add / import"],["stock","Stock-take"],["log","History"]]);
+  if(tab==="books"){
+    var tot=0,ol=0,od=[],soon=0,bad=0,rs=0;
+    books.forEach(function(b){tot+=b.copies.length;rs+=b.res.length;b.copies.forEach(function(c){if(c.st==="borrowed"){ol++;var d=days(c.due);if(d<0)od.push([b,c,d]);else if(d<=3)soon++}else if(c.st!=="available")bad++})});
+    h+='<div class="stats"><div class="stat"><b>'+books.length+'</b>titles</div><div class="stat"><b>'+tot+'</b>copies</div><div class="stat"><b>'+ol+'</b>on loan</div><div class="stat"><b>'+soon+'</b>due in 3 days</div><div class="stat"><b>'+od.length+'</b>overdue</div><div class="stat"><b>'+bad+'</b>damaged / lost / withdrawn</div></div>';
+    od.sort(function(x,y){return x[2]-y[2]});
+    h+=od.map(function(x){return al("no","Overdue: "+x[0].title+" ("+x[1].no+")","Student "+x[1].m+" · "+(-x[2])+" day"+(x[2]<-1?"s":"")+" late · fine so far "+naira(-x[2]*FINE))}).join("");
+    if(!books.length)h+='<div class="empty">No books yet. Add books to the shared catalogue.</div>';
+    h+=books.map(function(b){
+      if(editId===b.id)return'<div class="card"><h3>Edit book</h3>'+bookForm("e",b,"esave","Save changes",true)+'<button class="b" data-act="ecancel">Cancel</button></div>';
+      var x='<div class="card '+(b.ref?"s-wn":nAvail(b)>0?"s-ok":"s-no")+'">'+hd(b)+'<div class="meta"><span>'+nAvail(b)+' of '+b.copies.length+' on shelf</span>'+(b.ref?'<span>Reference only</span>':"")+(b.res.length?'<span>Reserved by '+b.res.map(esc).join(", ")+'</span>':"")+'</div>';
+      b.copies.forEach(function(c){var d=c.st==="borrowed"?days(c.due):0;
+        x+='<div class="cp"><span><b>'+esc(c.no)+'</b> · '+(c.st==="borrowed"?"borrowed by "+esc(c.m)+", due "+fmt(c.due)+(d<0?' <b style="color:var(--no)">OVERDUE</b>':""):'<span class="badge '+(c.st==="available"?"ok":"no")+'" style="margin:0">'+c.st+'</span>')+'</span><span>'+BTN[c.st].map(function(a){return'<button class="b" data-act="cp" data-do="'+a[0]+'" data-id="'+b.id+'" data-no="'+esc(c.no)+'">'+a[1]+'</button>'}).join("")+'</span></div>'});
+      if(!b.ref)x+='<div class="inl"><input id="iss'+b.id+'" placeholder="Student matric number" inputmode="numeric"'+(nAvail(b)<1?" disabled":"")+'><button class="b p" style="margin:0" data-act="iss" data-id="'+b.id+'"'+(nAvail(b)<1?" disabled":"")+'>Issue a copy</button></div>';
+      if(b.res.length&&nAvail(b)>0)x+='<button class="b" data-act="skip" data-id="'+b.id+'">'+esc(b.res[0])+' did not collect: next in queue</button>';
+      x+='<div class="inl"><input id="why'+b.id+'" placeholder="Reason (needed for damaged, lost, withdraw, delete)"></div>';
+      x+='<button class="b" data-act="edit" data-id="'+b.id+'">Edit details</button><button class="b d" data-act="'+(delId===b.id?"delok":"del")+'" data-id="'+b.id+'">'+(delId===b.id?"Tap again to delete":"Delete title")+'</button>';
+      return x+'</div>'}).join("");
+  }else if(tab==="fines"){
+    var up=fines.filter(function(f){return!f.paid}),tp=0;up.forEach(function(f){tp+=f.amt});
+    h+='<div class="stats"><div class="stat"><b>'+up.length+'</b>unpaid fines</div><div class="stat"><b>'+naira(tp)+'</b>owed</div></div><p class="meta">Fines are created when a late book is returned (or a borrowed book is marked lost). Students with unpaid fines cannot borrow.</p>';
+    h+=up.length?up.map(function(f){return'<div class="card"><h3>'+naira(f.amt)+' · '+esc(f.m)+'</h3><div class="meta">'+esc(f.note)+'</div><button class="b p" data-act="pay" data-id="'+f.id+'">Mark as paid</button></div>'}).join(""):'<div class="empty">No unpaid fines.</div>';
+  }else if(tab==="reqs"){
+    h+=reqs.length?reqs.map(function(r){return'<div class="card"><h3>'+esc(r.t)+'</h3><div class="meta">'+(r.a?esc(r.a)+" · ":"")+'requested by '+esc(r.m)+'</div><button class="b p" data-act="dis" data-id="'+r.id+'">Mark as handled</button></div>'}).join(""):'<div class="empty">No requests from students.</div>';
+  }else if(tab==="add"){
+    h+='<div class="card"><h2 style="margin-top:0">Add one title</h2><p class="meta">If the ISBN already exists, the new copies are added to that title. Each copy gets its own number (for example CS-A1-04).</p>'+bookForm("n",null,"addb","Add book")+'</div>';
+    h+='<div class="card"><h2 style="margin-top:0">Import a shipment</h2><p class="meta">One book per line: Title | Author | Edition | ISBN | Subject | Shelf | Copies</p><textarea id="bulk" placeholder="Clean Architecture | Robert C. Martin | 1st ed. | 9780134494166 | Programming | CS-A4 | 3"></textarea><button class="b p" data-act="bulk">Import</button></div>';
+  }else if(tab==="stock"){
+    h+='<p class="meta">Count what is physically on the shelf for each title and compare it with the system. Differences are written to the history log. Nothing is marked lost automatically.</p>'+books.map(function(b){return'<div class="card"><h3>'+esc(b.title)+'</h3><div class="meta">System says '+nAvail(b)+' on shelf</div><div class="inl"><input id="cnt'+b.id+'" type="number" min="0" placeholder="Counted on shelf"><button class="b p" style="margin:0" data-act="count" data-id="'+b.id+'">Check</button></div></div>'}).join("");
+  }else{
+    var l=logs.slice().sort(function(a,b){return a.t<b.t?1:-1}).slice(0,100);
+    h+='<p class="meta">Newest first. Entries cannot be edited or deleted from this screen.</p>'+(l.length?l.map(function(x){return'<div class="card"><div class="meta">'+new Date(x.t).toLocaleString()+' · '+esc(x.by)+'</div>'+esc(x.act)+'</div>'}).join(""):'<div class="empty">No actions recorded yet.</div>');
+  }
+  return h+'<p class="note">'+status()+'</p>';
+}
+function cpAct(b,c,k){
+  var w=$("why"+b.id),why=w?w.value.trim():"",need=["retd","dmg","lost","wd"].indexOf(k)>-1;
+  if(need&&!why){toast("Write the reason first");return}
+  var m=c.m,was=c.st,t="";
+  if(k==="ret"||k==="retd"){var d=days(c.due);if(d<0)addFine(m,-d*FINE,"Late return: "+b.title+" ("+(-d)+" days)");
+    t="Returned "+c.no+" ("+b.title+") from "+m+(d<0?", "+(-d)+" days late, fine "+naira(-d*FINE):"")+(k==="retd"?". Damaged: "+why:"");c.st=k==="ret"?"available":"damaged";clearLoan(c)}
+  else if(k==="dmg"){c.st="damaged";t="Marked "+c.no+" ("+b.title+") damaged: "+why}
+  else if(k==="lost"){if(was==="borrowed")addFine(m,LOSTFEE,"Lost book: "+b.title);t="Marked "+c.no+" ("+b.title+") lost: "+why+(was==="borrowed"?". Charged "+m+" "+naira(LOSTFEE):"");c.st="lost";clearLoan(c)}
+  else if(k==="wd"){c.st="withdrawn";t="Withdrew "+c.no+" ("+b.title+"): "+why}
+  else{c.st="available";t="Restored "+c.no+" ("+b.title+") to the shelf"}
+  logA(t);put("books",b);render();toast(k==="ret"&&b.res.length?"Returned. Notify "+b.res[0]+" (first in queue)":"Done and recorded");
+}
+document.addEventListener("click",function(e){
+  var t=e.target.closest("button");if(!t)return;
+  var a=t.dataset.act,id=t.dataset.id,b=id?getB(id):null,v;
+  if(t.dataset.tab){tab=t.dataset.tab;editId=delId=null;render();return}
+  if(t.dataset.st){st=t.dataset.st;render();return}
+  if(a==="student-login"){studentAuth("login")}
+  else if(a==="student-signup"){studentAuth("signup")}
+  else if(a==="student-create"){authMode="signup";render()}
+  else if(a==="student-back"){authMode="login";render()}
+  else if(a==="staff-toggle"){staffVisible=!staffVisible;render()}
+  else if(a==="student-resend"){resendConfirmation()}
+  else if(a==="staff-login"){staffAuth()}
+  else if(a==="out"){supabaseClient.auth.signOut();authUser=authProfile=null;role=null;me=staff="";editId=delId=null;render()}
+  else if(a==="res"&&b){dbRpc("reserve_book",{p_book_id:b.id}).then(function(){toast("Reservation added")}).catch(function(x){toast(x.message)})}
+  else if(a==="unres"&&b){supabaseClient.from("reservations").select("id").eq("book_id",b.id).eq("student_id",authUser.id).in("status",["waiting","ready"]).then(function(x){if(x.error)throw x.error;if(!x.data.length)throw Error("Reservation not found");return dbRpc("cancel_reservation",{p_reservation_id:x.data[0].id})}).catch(function(x){toast(x.message)})}
+  else if(a==="renew"&&b){var c=b.copies.filter(function(x){return x.no===t.dataset.no})[0];if(c&&c.loanId)dbRpc("renew_loan",{p_loan_id:c.loanId}).then(function(d){toast("Renewed until "+fmt(d))}).catch(function(x){toast(x.message)})}
+  else if(a==="rsend"){v=$("rt").value.trim();if(!v){toast("Enter the book title");return}dbRpc("create_book_request",{p_title:v,p_author:$("ra").value.trim()||null,p_notes:null}).then(function(){tab="mine";render();toast("Request sent to the librarian")}).catch(function(x){toast(x.message)})}
+  else if(a==="iss"&&b){v=$("iss"+id).value.trim();if(!MAT.test(v)){toast("Matric number must be 9 digits");return}var c2=b.copies.filter(isA)[0];if(!c2)return;dbRpc("issue_book",{p_copy_id:c2.id,p_student_matric:v}).then(function(){toast("Book issued")}).catch(function(x){toast(x.message)})}
+  else if(a==="cp"&&b){var cc=b.copies.filter(function(x){return x.no===t.dataset.no})[0];if(cc){var act=t.dataset.do,why=$ ("why"+b.id)?.value.trim()||"";if(["ret","retd"].includes(act))dbRpc("return_book",{p_copy_id:cc.id,p_damaged:act==="retd",p_reason:act==="retd"?why:null}).then(function(){toast("Book returned")}).catch(function(x){toast(x.message)});else{var statusMap={dmg:"damaged",lost:"lost",wd:"withdrawn",rest:"available"};if(!why){toast("Write the reason first");return}dbRpc("set_copy_status",{p_copy_id:cc.id,p_status:statusMap[act],p_reason:why}).then(function(){toast("Copy status updated")}).catch(function(x){toast(x.message)})}}}
+  else if(a==="skip"&&b){supabaseClient.from("reservations").select("id").eq("book_id",b.id).eq("status","waiting").order("created_at").limit(1).then(function(r){if(r.error)throw r.error;if(!r.data.length)throw Error("No waiting reservation found");return dbRpc("cancel_reservation",{p_reservation_id:r.data[0].id})}).then(function(){toast("Reservation removed from the queue")}).catch(function(x){toast(x.message)})}
+  else if(a==="pay"){dbRpc("mark_fine_paid",{p_fine_id:id}).then(function(){toast("Fine marked as paid")}).catch(function(x){toast(x.message)})}
+  else if(a==="dis"){dbRpc("handle_book_request",{p_request_id:id,p_status:"handled"}).then(function(){toast("Request marked as handled")}).catch(function(x){toast(x.message)})}
+  else if(a==="edit"){editId=id;render()}
+  else if(a==="ecancel"){editId=null;render()}
+  else if(a==="esave"&&b){var g=readForm("e");if(!g.title||!g.shelf){toast("Title and shelf code are required");return}
+    var old=b.title;b.title=g.title;b.author=g.author;b.edition=g.edition;b.isbn=g.isbn;b.cat=g.cat;b.shelf=g.shelf;b.ref=g.ref;if(g.n>0)addCopies(b,g.n);
+    supabaseClient.from("books").update({title:g.title,author:g.author,edition:g.edition||null,isbn:g.isbn||null,subject:g.cat,shelf_code:g.shelf,is_reference:g.ref}).eq("id",b.id).then(async function(r){if(r.error)throw r.error;if(g.n>0){var rows=[];for(var z=0;z<g.n;z++)rows.push({book_id:b.id,copy_label:g.shelf+"-"+("0"+(b.copies.length+z+1)).slice(-2)});var ir=await supabaseClient.from("book_copies").insert(rows);if(ir.error)throw ir.error}editId=null;await loadLibraryData();render();toast("Book updated")}).catch(function(x){toast(x.message)})}
+  else if(a==="del"){delId=id;render()}
+  else if(a==="delok"&&b){var w=$("why"+id).value.trim();if(!w){toast("Write the reason first");return}if(nLoans(b)){toast("Cannot delete: copies are on loan");return}
+    supabaseClient.from("books").update({active:false}).eq("id",b.id).then(async function(r){if(r.error)throw r.error;delId=null;await loadLibraryData();render();toast("Title archived")}).catch(function(x){toast(x.message)})}
+  else if(a==="addb"){var n=readForm("n");if(!n.title||!n.shelf||n.n<1){toast("Add title, shelf code and number of copies");return}dbAddTitle(n).then(function(){tab="books";render()}).catch(function(x){toast(x.message)})}
+  else if(a==="bulk"){var lines=$("bulk").value.split("\n"),items=[];lines.forEach(function(L){var p=L.split("|").map(function(x){return x.trim()});if(p.length<7||!p[0]||!p[5]||!(parseInt(p[6],10)>0))return;items.push({title:p[0],author:p[1]||"Unknown",edition:p[2],isbn:p[3],cat:p[4]||"General",shelf:p[5],n:parseInt(p[6],10),ref:false})});
+    if(!items.length){toast("No valid lines. Use 7 parts separated by |");return}(async function(){try{for(var bi=0;bi<items.length;bi++)await dbAddTitle(items[bi]);tab="books";render();toast(items.length+" shipment line(s) imported")}catch(x){toast(x.message||"Import failed")}})()}
+  else if(a==="count"&&b){v=parseInt($("cnt"+id).value,10);if(isNaN(v)||v<0){toast("Enter the number counted");return}var ex=nAvail(b);
+    dbRpc("record_stock_count",{p_book_id:b.id,p_counted_available:v,p_note:null}).then(function(){toast(v===ex?"Matches the system":v<ex?(ex-v)+" missing. Investigate and mark lost or found.":(v-ex)+" extra. Check returns not recorded.")}).catch(function(x){toast(x.message)})}
+  else if(a==="load"){seedB().forEach(function(x){books.push(x);put("books",x)});sortB();logA("Loaded sample books");render()}
+});
+function addTitle(n,quiet){
+  var ex=books.filter(function(b){return n.isbn&&b.isbn===n.isbn})[0];
+  if(ex){addCopies(ex,n.n);logA("Added "+n.n+" copies to "+ex.title);put("books",ex);if(!quiet)toast("Added "+n.n+" copies to existing title")}
+  else{var b={id:uid("b"),title:n.title,author:n.author,cat:n.cat,shelf:n.shelf,edition:n.edition,isbn:n.isbn,ref:n.ref,copies:mkCopies(n.shelf,n.n,0),res:[]};books.push(b);sortB();logA("Added title "+n.title+" with "+n.n+" copies ("+b.copies[0].no+" to "+b.copies[b.copies.length-1].no+")");put("books",b);if(!quiet)toast("Book added. Students can now find it.")}
+}
+document.addEventListener("input",function(e){if(e.target.id==="q"){q=e.target.value;fillList()}});
+document.addEventListener("change",function(e){if(e.target.id==="cat"){cat=e.target.value;fillList()}});
+render();init();restoreAuth();
+</script>
+</body>
+</html>
