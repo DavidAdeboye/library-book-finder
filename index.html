@@ -351,7 +351,7 @@ async function loadLibraryData(){
     var results=await Promise.all([
       supabaseClient.from("books").select("*").eq("active",true).order("title"),
       supabaseClient.from("book_copies").select("*"),
-      supabaseClient.from("loans").select("*, profiles(matric_number)").eq("status","active"),
+      supabaseClient.from("loans").select("*, profiles!loans_student_id_fkey(matric_number)").eq("status","active"),
       supabaseClient.from("reservations").select("*, profiles(matric_number)").in("status",["waiting","ready"]).order("created_at"),
       supabaseClient.from("fines").select("*, profiles(matric_number)").order("created_at",{ascending:false}),
       supabaseClient.from("book_requests").select("*, profiles(matric_number)").eq("status","open").order("created_at",{ascending:false}),
