@@ -500,7 +500,6 @@ async function loadLibraryData(){
   }
 }
 
-}
 async function refreshLibrary(){await loadLibraryData()}
 function init(){mode="supabase";render();}
 async function dbRpc(name,args){var r=await supabaseClient.rpc(name,args||{});if(r.error)throw r.error;await loadLibraryData();return r.data}
