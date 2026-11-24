@@ -346,29 +346,160 @@ async function restoreAuth(){
 }
 async function loadLibraryData(){
   if(!authUser)return;
+
   mode="supabase";
+
   try{
     var results=await Promise.all([
-      supabaseClient.from("books").select("*").eq("active",true).order("title"),
-      supabaseClient.from("book_copies").select("*"),
-      supabaseClient.from("loans").select("*, profiles!loans_student_id_fkey(matric_number)").eq("status","active"),
-      supabaseClient.from("reservations").select("*, profiles(matric_number)").in("status",["waiting","ready"]).order("created_at"),
-      supabaseClient.from("fines").select("*, profiles(matric_number)").order("created_at",{ascending:false}),
-      supabaseClient.from("book_requests").select("*, profiles(matric_number)").eq("status","open").order("created_at",{ascending:false}),
-      supabaseClient.from("activity_logs").select("*").order("created_at",{ascending:false}).limit(150)
+      supabaseClient
+        .from("books")
+        .select("*")
+        .eq("active",true)
+        .order("title"),
+
+      supabaseClient
+        .from("book_copies")
+        .select("*"),
+
+      supabaseClient
+        .from("loans")
+        .select("*, profiles!loans_student_id_fkey(matric_number)")
+        .eq("status","active"),
+
+      supabaseClient
+        .from("reservations")
+        .select("*, profiles!reservations_student_id_fkey(matric_number)")
+        .in("status",["waiting","ready"])
+        .order("created_at"),
+
+      supabaseClient
+        .from("fines")
+        .select("*, profiles!fines_student_id_fkey(matric_number)")
+        .order("created_at",{ascending:false}),
+
+      supabaseClient
+        .from("book_requests")
+        .select("*, profiles!book_requests_student_id_fkey(matric_number)")
+        .eq("status","open")
+        .order("created_at",{ascending:false}),
+
+      supabaseClient
+        .from("activity_logs")
+        .select("*")
+        .order("created_at",{ascending:false})
+        .limit(150)
     ]);
-    for(var i=0;i<results.length;i++)if(results[i].error)throw results[i].error;
-    var bRows=results[0].data||[],cRows=results[1].data||[],lRows=results[2].data||[],rRows=results[3].data||[],fRows=results[4].data||[],qRows=results[5].data||[],aRows=results[6].data||[];
-    var loanByCopy={};lRows.forEach(function(x){loanByCopy[x.copy_id]=x});
-    books=bRows.map(function(b){var copies=cRows.filter(function(c){return c.book_id===b.id}).map(function(c){var l=loanByCopy[c.id],o={id:c.id,no:c.copy_label,st:c.status};if(l){o.m=l.profiles?.matric_number||"";o.due=l.due_date;o.ren=l.renewal_count;o.loanId=l.id}return o});
-      var res=rRows.filter(function(r){return r.book_id===b.id}).map(function(r){return r.profiles?.matric_number||""});
-      return{id:b.id,title:b.title,author:b.author,cat:b.subject,shelf:b.shelf_code,edition:b.edition||"",isbn:b.isbn||"",ref:b.is_reference,copies:copies,res:res,db:true};
+
+    for(var i=0;i<results.length;i++){
+      if(results[i].error)throw results[i].error;
+    }
+
+    var bRows=results[0].data||[];
+    var cRows=results[1].data||[];
+    var lRows=results[2].data||[];
+    var rRows=results[3].data||[];
+    var fRows=results[4].data||[];
+    var qRows=results[5].data||[];
+    var aRows=results[6].data||[];
+
+    var loanByCopy={};
+
+    lRows.forEach(function(x){
+      loanByCopy[x.copy_id]=x;
     });
-    fines=fRows.map(function(f){return{id:f.id,m:f.profiles?.matric_number||"",amt:f.amount_ngn,note:f.description,paid:f.status!=="unpaid",created_at:f.created_at}});
-    reqs=qRows.map(function(r){return{id:r.id,t:r.title,a:r.author||"",m:r.profiles?.matric_number||"",created_at:r.created_at}});
-    logs=aRows.map(function(x){return{id:x.id,t:x.created_at,by:x.actor_label,act:(x.action||"").replaceAll("_"," ")+(x.target_student_matric?" · "+x.target_student_matric:"")+(x.details?.title?" · "+x.details.title:"")}});
-    sortB();render();
-  }catch(e){console.error("Supabase data load failed",e);toast("Could not load library data: "+(e.message||"check database policies"));}
+
+    books=bRows.map(function(b){
+      var copies=cRows
+        .filter(function(c){
+          return c.book_id===b.id;
+        })
+        .map(function(c){
+          var l=loanByCopy[c.id];
+
+          var o={
+            id:c.id,
+            no:c.copy_label,
+            st:c.status
+          };
+
+          if(l){
+            o.m=l.profiles?.matric_number||"";
+            o.due=l.due_date;
+            o.ren=l.renewal_count;
+            o.loanId=l.id;
+          }
+
+          return o;
+        });
+
+      var res=rRows
+        .filter(function(r){
+          return r.book_id===b.id;
+        })
+        .map(function(r){
+          return r.profiles?.matric_number||"";
+        });
+
+      return {
+        id:b.id,
+        title:b.title,
+        author:b.author,
+        cat:b.subject,
+        shelf:b.shelf_code,
+        edition:b.edition||"",
+        isbn:b.isbn||"",
+        ref:b.is_reference,
+        copies:copies,
+        res:res,
+        db:true
+      };
+    });
+
+    fines=fRows.map(function(f){
+      return {
+        id:f.id,
+        m:f.profiles?.matric_number||"",
+        amt:f.amount_ngn,
+        note:f.description,
+        paid:f.status!=="unpaid",
+        created_at:f.created_at
+      };
+    });
+
+    reqs=qRows.map(function(r){
+      return {
+        id:r.id,
+        t:r.title,
+        a:r.author||"",
+        m:r.profiles?.matric_number||"",
+        created_at:r.created_at
+      };
+    });
+
+    logs=aRows.map(function(x){
+      return {
+        id:x.id,
+        t:x.created_at,
+        by:x.actor_label,
+        act:
+          (x.action||"").replaceAll("_"," ")+
+          (x.target_student_matric?" · "+x.target_student_matric:"")+
+          (x.details?.title?" · "+x.details.title:"")
+      };
+    });
+
+    sortB();
+    render();
+
+  }catch(e){
+    console.error("Supabase data load failed",e);
+    toast(
+      "Could not load library data: "+
+      (e.message||"check database policies")
+    );
+  }
+}
+
 }
 async function refreshLibrary(){await loadLibraryData()}
 function init(){mode="supabase";render();}
